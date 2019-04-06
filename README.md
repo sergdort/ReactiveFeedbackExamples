@@ -3,4 +3,4 @@ Examples from my talk at http://uamobile.org
 
 | | |
 |---|---|
-| ![](Slides and Screenshots/title.png) |![](Slides and Screenshots/quote.png)|
+| ![](Slides/title.png) |![](Slides/quote.png)|
