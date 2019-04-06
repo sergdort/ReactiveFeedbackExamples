@@ -1,0 +1,6 @@
+framework module ReactiveFeedback {
+  umbrella header "ReactiveFeedback-umbrella.h"
+
+  export *
+  module * { export * }
+}
