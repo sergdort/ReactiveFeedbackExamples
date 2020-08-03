@@ -1,6 +1,6 @@
+#if canImport(UIKit) && !os(tvOS) && !os(watchOS)
 import UIKit
 import ReactiveSwift
-import enum Result.NoError
 
 /// The type of system keyboard events.
 public enum KeyboardEvent {
@@ -15,17 +15,17 @@ public enum KeyboardEvent {
 	fileprivate var notificationName: Notification.Name {
 		switch self {
 		case .willShow:
-			return .UIKeyboardWillShow
+			return UIResponder.keyboardWillShowNotification
 		case .didShow:
-			return .UIKeyboardDidShow
+			return UIResponder.keyboardDidShowNotification
 		case .willHide:
-			return .UIKeyboardWillHide
+			return UIResponder.keyboardWillHideNotification
 		case .didHide:
-			return .UIKeyboardDidHide
+			return UIResponder.keyboardDidHideNotification
 		case .willChangeFrame:
-			return .UIKeyboardWillChangeFrame
+			return UIResponder.keyboardWillChangeFrameNotification
 		case .didChangeFrame:
-			return .UIKeyboardDidChangeFrame
+			return UIResponder.keyboardDidChangeFrameNotification
 		}
 	}
 }
@@ -39,25 +39,25 @@ public struct KeyboardChangeContext {
 
 	/// The current frame of the system keyboard.
 	public var beginFrame: CGRect {
-		return base[UIKeyboardFrameBeginUserInfoKey] as! CGRect
+		return base[UIResponder.keyboardFrameBeginUserInfoKey] as! CGRect
 	}
 
 	/// The final frame of the system keyboard.
 	public var endFrame: CGRect {
-		return base[UIKeyboardFrameEndUserInfoKey] as! CGRect
+		return base[UIResponder.keyboardFrameEndUserInfoKey] as! CGRect
 	}
 
 	/// The animation curve which the system keyboard will use to animate the
 	/// change in its frame.
-	public var animationCurve: UIViewAnimationCurve {
-		let value = base[UIKeyboardAnimationCurveUserInfoKey] as! NSNumber
-		return UIViewAnimationCurve(rawValue: value.intValue)!
+	public var animationCurve: UIView.AnimationCurve {
+		let value = base[UIResponder.keyboardAnimationCurveUserInfoKey] as! NSNumber
+		return UIView.AnimationCurve(rawValue: value.intValue)!
 	}
 
 	/// The duration in which the system keyboard expects to animate the change in
 	/// its frame.
 	public var animationDuration: Double {
-		return base[UIKeyboardAnimationDurationUserInfoKey] as! Double
+		return base[UIResponder.keyboardAnimationDurationUserInfoKey] as! Double
 	}
 
 	/// Indicates whether the change is triggered locally. Used in iPad
@@ -65,7 +65,7 @@ public struct KeyboardChangeContext {
 	/// in the system keyboard's frame.
 	@available(iOS 9.0, *)
 	public var isLocal: Bool {
-		return base[UIKeyboardIsLocalUserInfoKey] as! Bool
+		return base[UIResponder.keyboardIsLocalUserInfoKey] as! Bool
 	}
 
 	fileprivate init(userInfo: [AnyHashable: Any], event: KeyboardEvent) {
@@ -81,7 +81,7 @@ extension Reactive where Base: NotificationCenter {
 	///   - event:  The type of system keyboard event to observe.
 	///
 	/// - returns: A `Signal` that emits the context of system keyboard event.
-	public func keyboard(_ event: KeyboardEvent) -> Signal<KeyboardChangeContext, NoError> {
+	public func keyboard(_ event: KeyboardEvent) -> Signal<KeyboardChangeContext, Never> {
 		return notifications(forName: event.notificationName)
 			.map { notification in KeyboardChangeContext(userInfo: notification.userInfo!, event: event) }
 	}
@@ -94,7 +94,7 @@ extension Reactive where Base: NotificationCenter {
 	///   - tail: Rest of the types of system keyboard events to observe.
 	///
 	/// - returns: A `Signal` that emits the context of system keyboard events.
-	public func keyboard(_ first: KeyboardEvent, _ second: KeyboardEvent, _ tail: KeyboardEvent...) -> Signal<KeyboardChangeContext, NoError> {
+	public func keyboard(_ first: KeyboardEvent, _ second: KeyboardEvent, _ tail: KeyboardEvent...) -> Signal<KeyboardChangeContext, Never> {
 		let events = [first, second] + tail
 		return .merge(events.map(keyboard))
 	}
@@ -104,7 +104,8 @@ extension Reactive where Base: NotificationCenter {
 	///
 	/// - returns: A `Signal` that emits the context of every change in the
 	///            system keyboard's frame.
-	public var keyboardChange: Signal<KeyboardChangeContext, NoError> {
+	public var keyboardChange: Signal<KeyboardChangeContext, Never> {
 		return keyboard(.willChangeFrame)
 	}
 }
+#endif

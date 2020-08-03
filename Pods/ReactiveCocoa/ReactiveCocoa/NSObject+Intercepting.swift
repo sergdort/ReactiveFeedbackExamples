@@ -1,6 +1,8 @@
 import Foundation
+#if SWIFT_PACKAGE
+import ReactiveCocoaObjC
+#endif
 import ReactiveSwift
-import enum Result.NoError
 
 /// Whether the runtime subclass has already been prepared for method
 /// interception.
@@ -27,7 +29,7 @@ extension Reactive where Base: NSObject {
 	///   - selector: The selector to observe.
 	///
 	/// - returns: A trigger signal.
-	public func trigger(for selector: Selector) -> Signal<(), NoError> {
+	public func trigger(for selector: Selector) -> Signal<(), Never> {
 		return base.intercept(selector).map { _ in }
 	}
 
@@ -44,7 +46,7 @@ extension Reactive where Base: NSObject {
 	///   - selector: The selector to observe.
 	///
 	/// - returns: A signal that sends an array of bridged arguments.
-	public func signal(for selector: Selector) -> Signal<[Any?], NoError> {
+	public func signal(for selector: Selector) -> Signal<[Any?], Never> {
 		return base.intercept(selector).map(unpackInvocation)
 	}
 }
@@ -58,7 +60,7 @@ extension NSObject {
 	///
 	/// - returns: A signal that sends the corresponding `NSInvocation` after 
 	///            every invocation of the method.
-	@nonobjc fileprivate func intercept(_ selector: Selector) -> Signal<AnyObject, NoError> {
+	@nonobjc fileprivate func intercept(_ selector: Selector) -> Signal<AnyObject, Never> {
 		guard let method = class_getInstanceMethod(objcClass, selector) else {
 			fatalError("Selector `\(selector)` does not exist in class `\(String(describing: objcClass))`.")
 		}
@@ -278,7 +280,7 @@ private func setupMethodSignatureCaching(_ realClass: AnyClass, _ signatureCache
 
 /// The state of an intercepted method specific to an instance.
 private final class InterceptingState {
-	let (signal, observer) = Signal<AnyObject, NoError>.pipe()
+	let (signal, observer) = Signal<AnyObject, Never>.pipe()
 
 	/// Initialize a state specific to an instance.
 	///
@@ -407,11 +409,10 @@ private func unpackInvocation(_ invocation: AnyObject) -> [Any?] {
 		let encoding = ObjCTypeEncoding(rawValue: rawEncoding.pointee) ?? .undefined
 
 		func extract<U>(_ type: U.Type) -> U {
-			let pointer = UnsafeMutableRawPointer.allocate(bytes: MemoryLayout<U>.size,
-			                                               alignedTo: MemoryLayout<U>.alignment)
+			let pointer = UnsafeMutableRawPointer.allocate(byteCount: MemoryLayout<U>.size,
+			                                               alignment: MemoryLayout<U>.alignment)
 			defer {
-				pointer.deallocate(bytes: MemoryLayout<U>.size,
-				                   alignedTo: MemoryLayout<U>.alignment)
+				pointer.deallocate()
 			}
 
 			invocation.objcCopy(to: pointer, forArgumentAt: Int(position))
@@ -456,8 +457,8 @@ private func unpackInvocation(_ invocation: AnyObject) -> [Any?] {
 		case .undefined:
 			var size = 0, alignment = 0
 			NSGetSizeAndAlignment(rawEncoding, &size, &alignment)
-			let buffer = UnsafeMutableRawPointer.allocate(bytes: size, alignedTo: alignment)
-			defer { buffer.deallocate(bytes: size, alignedTo: alignment) }
+			let buffer = UnsafeMutableRawPointer.allocate(byteCount: size, alignment: alignment)
+			defer { buffer.deallocate() }
 
 			invocation.objcCopy(to: buffer, forArgumentAt: Int(position))
 			value = NSValue(bytes: buffer, objCType: rawEncoding)

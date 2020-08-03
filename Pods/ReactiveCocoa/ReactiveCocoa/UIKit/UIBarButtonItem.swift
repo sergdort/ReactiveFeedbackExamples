@@ -1,3 +1,4 @@
+#if canImport(UIKit) && !os(watchOS)
 import ReactiveSwift
 import UIKit
 
@@ -28,7 +29,7 @@ extension Reactive where Base: UIBarButtonItem {
 	}
 
 	/// Sets the style of the bar button item.
-	public var style: BindingTarget<UIBarButtonItemStyle> {
+	public var style: BindingTarget<UIBarButtonItem.Style> {
 		return makeBindingTarget { $0.style = $1 }
 	}
 
@@ -47,3 +48,4 @@ extension Reactive where Base: UIBarButtonItem {
 		return makeBindingTarget { $0.customView = $1 }
 	}
 }
+#endif

@@ -1,7 +1,6 @@
 import UIKit
-import ReactiveFeedback
+import Loop
 import ReactiveSwift
-import Result
 
 class TrafficLightViewController: UIViewController {
     @IBOutlet weak var redView: UIView!
@@ -11,7 +10,7 @@ class TrafficLightViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        viewModel.state.producer.startWithValues { [weak self] (state) in
+        viewModel.state.startWithValues { [weak self] (state) in
             self?.render(state: state)
         }
     }
@@ -36,11 +35,9 @@ class TrafficLightViewController: UIViewController {
     }
 }
 
-final class TrafficLightViewModel {
-    let state: Property<State>
-    
+final class TrafficLightViewModel: BaseLoopViewModel<TrafficLightViewModel.State, TrafficLightViewModel.Event> {
     init() {
-        self.state = Property(
+        super.init(
             initial: .red,
             reduce: TrafficLightViewModel.reduce,
             feedbacks: [
@@ -51,19 +48,19 @@ final class TrafficLightViewModel {
         )
     }
     
-    private static func reduce(state: State, event: Event) -> State {
+    private static func reduce(state: inout State, event: Event) {
         switch state {
         case .red:
-            return .yellow
+            state = .yellow
         case .yellow:
-            return .green
+            state = .green
         case .green:
-            return .red
+            state = .red
         }
     }
     
-    private static func whenRed() -> Feedback<State, Event> {
-        return Feedback { state -> SignalProducer<Event, NoError> in
+    private static func whenRed() -> FeedbackLoop<State, Event>.Feedback {
+        return .init { state -> SignalProducer<Event, Never> in
             guard case .red = state else { return .empty }
             
             return SignalProducer(value: Event.next)
@@ -71,8 +68,8 @@ final class TrafficLightViewModel {
         }
     }
     
-    private static func whenYellow() -> Feedback<State, Event> {
-        return Feedback { state -> SignalProducer<Event, NoError> in
+    private static func whenYellow() -> FeedbackLoop<State, Event>.Feedback {
+        return .init { state -> SignalProducer<Event, Never> in
             guard case .yellow = state else { return .empty }
             
             return SignalProducer(value: Event.next)
@@ -80,8 +77,8 @@ final class TrafficLightViewModel {
         }
     }
     
-    private static func whenGreen() -> Feedback<State, Event> {
-        return Feedback { state -> SignalProducer<Event, NoError> in
+    private static func whenGreen() -> FeedbackLoop<State, Event>.Feedback {
+        return .init { state -> SignalProducer<Event, Never> in
             guard case .green = state else { return .empty }
             
             return SignalProducer(value: Event.next)

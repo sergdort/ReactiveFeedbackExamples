@@ -1,57 +1,51 @@
-import ReactiveFeedback
+import Loop
 import ReactiveSwift
-import Result
 
-final class RAFLoginViewModel {
-    let state: Property<State>
-    private let input = Feedback<State, Event>.input()
-    
+final class RAFLoginViewModel: BaseLoopViewModel<RAFLoginViewModel.State, RAFLoginViewModel.Event> {
     init() {
-        self.state = Property(
+        super.init(
             initial: State(),
-            reduce: RAFLoginViewModel.reduce,
+            reduce: Self.reduce(state:event:),
             feedbacks: [
-                RAFLoginViewModel.whenLoading(loginService: LogInService()),
-                input.feedback
+                Self.whenLoading(loginService: LogInService()),
             ]
         )
     }
     
     func didChangePassword(_ password: String) {
-        input.observer(.didChangePassword(password))
+        send(event: .didChangePassword(password))
     }
     
     func didChangeUsername(_ username: String) {
-        input.observer(.didChangeUsername(username))
+        send(event: .didChangeUsername(username))
     }
     
     func didTapSignIn() {
-        input.observer(.startLoading)
+        send(event: .startLoading)
     }
     
-    private static func whenLoading(loginService: LogInService) -> Feedback<State, Event> {
-        return Feedback(
+    private static func whenLoading(loginService: LogInService) -> FeedbackLoop<State, Event>.Feedback {
+        return .init(
             predicate: { $0.isLoading },
-            effects: { (state: State) -> SignalProducer<Event, NoError> in
+            effects: { (state: State) -> SignalProducer<Event, Never> in
                 return loginService.rac_login(username: state.username, password: state.password)
                     .map(Event.didAuth)
             }
         )
     }
     
-    private static func reduce(state: State, event: Event) -> State {
+    private static func reduce(state: inout State, event: Event) {
         switch event {
         case .didAuth(let isAuthorized):
-            return state.set(\.isAuthorized, isAuthorized)
-                .set(\.isLoading, false)
-                .set(\.status, isAuthorized ? "Success" : "Unauthorized")
+            state.isAuthorized = isAuthorized
+            state.isLoading = false
+            state.status = isAuthorized ? "Success" : "Unauthorized"
         case .didChangeUsername(let username):
-            return state.set(\.username, username)
+            state.username = username
         case .didChangePassword(let password):
-            return state.set(\.password, password)
+            state.password = password
         case .startLoading:
-            return state.set(\.isLoading, true)
-                .set(\.status, "Loading...")
+            state.isLoading = true
         }
     }
     
@@ -86,13 +80,3 @@ extension With where Self: Any {
     }
 }
 
-
-public extension Feedback {
-    public static func input() -> (feedback: Feedback<State, Event>, observer: (Event) -> Void) {
-        let pipe = Signal<Event, NoError>.pipe()
-        let feedback = Feedback { (scheduler, _) -> Signal<Event, NoError> in
-            return pipe.output.observe(on: scheduler)
-        }
-        return (feedback, pipe.input.send)
-    }
-}

@@ -15,18 +15,16 @@ final class RAFLoginViewController: UIViewController {
         super.viewDidLoad()
         
         usernameTextField.reactive.continuousTextValues
-            .skipNil()
             .observeValues(viewModel.didChangeUsername)
         
         passwordTextField.reactive.continuousTextValues
-            .skipNil()
             .observeValues(viewModel.didChangePassword)
         
         loginButton.reactive.controlEvents(.primaryActionTriggered)
             .map { _ in }
             .observeValues(viewModel.didTapSignIn)
         
-        viewModel.state.producer
+        viewModel.state
             .startWithValues { [weak self] in
                 self?.render(state: $0)
             }

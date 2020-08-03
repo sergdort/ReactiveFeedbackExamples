@@ -1,7 +1,6 @@
 import RxSwift
 import RxCocoa
 import ReactiveSwift
-import Result
 
 protocol KSLoginViewModelInputs {
     func passwordTextDidChange(_ text: String)
@@ -28,10 +27,10 @@ final class LogInService {
     func login(username: String, password: String) -> Observable<Bool> {
         return Observable
             .just(credentials[username] == password)
-            .delay(3, scheduler: MainScheduler.instance)
+            .delay(.seconds(3), scheduler: MainScheduler.instance)
     }
     
-    func rac_login(username: String, password: String) -> SignalProducer<Bool, NoError> {
+    func rac_login(username: String, password: String) -> SignalProducer<Bool, Never> {
         return SignalProducer(value: credentials[username] == password)
             .delay(3, on: QueueScheduler.main)
     }
