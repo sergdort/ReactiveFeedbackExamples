@@ -20,18 +20,14 @@ protocol KSLoginViewModelType {
 }
 
 final class LogInService {
-    private let credentials: [String: String] = [
-        "hello": "world"
-    ]
-    
     func login(username: String, password: String) -> Observable<Bool> {
         return Observable
-            .just(credentials[username] == password)
+            .just(Bool.random())
             .delay(.seconds(3), scheduler: MainScheduler.instance)
     }
     
     func rac_login(username: String, password: String) -> SignalProducer<Bool, Never> {
-        return SignalProducer(value: credentials[username] == password)
+        return SignalProducer(value: Bool.random())
             .delay(3, on: QueueScheduler.main)
     }
 }

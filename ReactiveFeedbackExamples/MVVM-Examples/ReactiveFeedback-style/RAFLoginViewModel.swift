@@ -49,7 +49,7 @@ final class RAFLoginViewModel: BaseLoopViewModel<RAFLoginViewModel.State, RAFLog
         }
     }
     
-    struct State: With {
+    struct State {
         var isLoading = false
         fileprivate var isAuthorized = false
         fileprivate var username = ""
@@ -66,17 +66,6 @@ final class RAFLoginViewModel: BaseLoopViewModel<RAFLoginViewModel.State, RAFLog
         case didChangeUsername(String)
         case didChangePassword(String)
         case startLoading
-    }
-}
-
-public protocol With {}
-
-extension With where Self: Any {
-    
-    func set<Value>(_ keyPath: WritableKeyPath<Self, Value>, _ value: Value) -> Self {
-        var copy = self
-        copy[keyPath: keyPath] = value
-        return copy
     }
 }
 
