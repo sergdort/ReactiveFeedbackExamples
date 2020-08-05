@@ -2,12 +2,12 @@ import Loop
 import ReactiveSwift
 
 final class RAFLoginViewModel: BaseLoopViewModel<RAFLoginViewModel.State, RAFLoginViewModel.Event> {
-    init() {
+    init(loginService: LogInService = LogInService()) {
         super.init(
             initial: State(),
             reduce: Self.reduce(state:event:),
             feedbacks: [
-                Self.whenLoading(loginService: LogInService()),
+                Self.whenLoading(loginService: loginService),
             ]
         )
     }
@@ -25,13 +25,16 @@ final class RAFLoginViewModel: BaseLoopViewModel<RAFLoginViewModel.State, RAFLog
     }
     
     private static func whenLoading(loginService: LogInService) -> FeedbackLoop<State, Event>.Feedback {
-        return .init(
-            predicate: { $0.isLoading },
-            effects: { (state: State) -> SignalProducer<Event, Never> in
-                return loginService.rac_login(username: state.username, password: state.password)
-                    .map(Event.didAuth)
+        return .init { (state) -> SignalProducer<Event, Never> in
+            guard state.isLoading else {
+                return .empty
             }
-        )
+            return loginService.rac_login(
+                username: state.username,
+                password: state.password
+            )
+            .map(Event.didAuth)
+        }
     }
     
     private static func reduce(state: inout State, event: Event) {
@@ -61,11 +64,12 @@ final class RAFLoginViewModel: BaseLoopViewModel<RAFLoginViewModel.State, RAFLog
         }
     }
     
-    private enum Event {
+    enum Event {
         case didAuth(Bool)
         case didChangeUsername(String)
         case didChangePassword(String)
         case startLoading
     }
+
 }
 
